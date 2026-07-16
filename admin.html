@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chopperia Nº 1 — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c1712; --ink-soft:#7a7167; --paper:#f7f2e7; --panel:#ffffff; --line:#e4dac8;
+    --gold:#c99a2e; --gold-deep:#8a6b1f; --gold-soft:#f3e6bf;
+    --ok:#43744a; --ok-soft:#dde9de; --danger:#a4423a; --danger-soft:#f3ddda;
+    --mono:'JetBrains Mono', ui-monospace, monospace; --serif:'Fraunces', Georgia, serif; --sans:'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);}
+  button, input, select{font-family:var(--sans);}
+  .btn{background:var(--ink); color:#fff; border:none; border-radius:7px; font-size:12.5px; font-weight:600; padding:9px 15px; cursor:pointer;}
+  .btn.gold{background:var(--gold); color:#241b06;}
+  .btn.gold:hover{background:var(--gold-deep); color:#fff;}
+  .btn.outline{background:transparent; border:1px solid var(--line); color:var(--ink);}
+  .btn.outline:hover{border-color:var(--ink);}
+  .btn.danger{background:var(--danger);}
+  .btn.small{padding:5px 10px; font-size:11.5px;}
+  input[type=text], input[type=number], input[type=password], input[type=date], select{
+    font-family:var(--sans); font-size:13px; border:1px solid var(--line); border-radius:6px; padding:7px 9px; background:#fff; color:var(--ink);
+  }
+  h2.title{font-family:var(--serif); font-size:19px; margin:0 0 4px 0;}
+  p.sub{margin:0 0 16px 0; color:var(--ink-soft); font-size:12.5px;}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:16px;}
+  table{border-collapse:collapse; width:100%; background:var(--panel); border:1px solid var(--line); border-radius:8px; overflow:hidden;}
+  thead th{background:var(--ink); color:#fff; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; padding:9px 8px; text-align:left;}
+  tbody td{padding:8px; border-top:1px solid var(--line); font-size:12.5px;}
+  td.num, th.num{text-align:right; font-family:var(--mono);}
+  .money{font-family:var(--mono);}
+  .pos{color:var(--ok);} .neg{color:var(--danger);}
+  .grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:16px;}
+  @media (max-width:760px){.grid-3{grid-template-columns:1fr;}}
+  .kpi{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px;}
+  .kpi .label{font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--ink-soft); margin-bottom:6px;}
+  .kpi .value{font-family:var(--mono); font-size:21px; font-weight:600;}
+  .form-row{display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; margin-bottom:10px;}
+  .field{display:flex; flex-direction:column; gap:3px;}
+  .field label{font-size:10.5px; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.3px;}
+  .hidden{display:none !important;}
+
+  /* login */
+  #loginScreen{min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--ink);}
+  .login-box{background:#fff; border-radius:14px; padding:34px; width:100%; max-width:340px; text-align:center;}
+  .login-box img{height:56px; margin-bottom:10px;}
+  .login-box h1{font-family:var(--serif); font-size:20px; margin:0 0 4px 0;}
+  .login-box p{color:var(--ink-soft); font-size:12.5px; margin:0 0 18px 0;}
+  .login-box input{width:100%; padding:11px 12px; margin-bottom:10px; text-align:center;}
+  .login-box .btn{width:100%; padding:11px;}
+  .login-err{color:var(--danger); font-size:12px; margin-top:8px; display:none;}
+
+  /* layout admin */
+  header{background:var(--ink); color:#fff; padding:14px 20px; display:flex; align-items:center; gap:14px; border-bottom:3px solid var(--gold);}
+  header .brand{font-family:var(--serif); font-size:18px; font-weight:700;}
+  header .spacer{flex:1;}
+  .wrap{display:flex; min-height:calc(100vh - 68px);}
+  nav.side{width:190px; flex-shrink:0; background:#fff; border-right:1px solid var(--line); padding:16px 10px;}
+  nav.side button{
+    display:block; width:100%; text-align:left; background:none; border:none; padding:10px 12px; margin-bottom:4px;
+    border-radius:7px; font-size:13px; font-weight:600; color:var(--ink-soft); cursor:pointer;
+  }
+  nav.side button.active{background:var(--gold-soft); color:var(--ink);}
+  main{flex:1; padding:20px; overflow-x:auto;}
+  .subtabs{display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap;}
+  .subtab{font-size:12px; font-weight:600; color:var(--ink-soft); background:#fff; border:1px solid var(--line); border-radius:20px; padding:6px 14px; cursor:pointer;}
+  .subtab.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .icon-btn{background:none; border:none; cursor:pointer; color:var(--ink-soft); font-size:14px;}
+  .icon-btn:hover{color:var(--danger);}
+  .cat-block{margin-bottom:22px;}
+  .cat-title{font-weight:700; font-size:13.5px; margin:0 0 8px 0; border-bottom:2px solid var(--gold-soft); padding-bottom:6px; display:flex; justify-content:space-between; align-items:center;}
+  .mes-cell{background:var(--danger-soft); border-radius:7px; padding:4px 3px; display:flex; flex-direction:column; align-items:center; gap:2px; min-width:56px;}
+  .mes-cell.is-pago{background:var(--ok-soft);}
+  .mes-cell input{width:100%; text-align:right; border:none; background:transparent; font-size:10px; font-family:var(--mono);}
+  .mes-cell label{font-size:8px; color:var(--ink-soft); display:flex; align-items:center; gap:2px; cursor:pointer;}
+  .progress{height:10px; border-radius:6px; background:var(--line); overflow:hidden; margin-top:8px;}
+  .progress > div{height:100%; background:var(--gold);}
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-box">
+    <img src="logo.jpg" alt="" onerror="this.style.display='none'">
+    <h1>Área do Administrador</h1>
+    <p>Chopperia Nº 1 — acesso restrito</p>
+    <input type="password" id="senhaInput" placeholder="Senha">
+    <button class="btn gold" id="entrarBtn">Entrar</button>
+    <div class="login-err" id="loginErr">Senha incorreta.</div>
+  </div>
+</div>
+
+<div id="adminScreen" class="hidden">
+  <header>
+    <div class="brand">Chopperia Nº 1 · Admin</div>
+    <div class="spacer"></div>
+    <a class="btn outline" style="color:#fff;border-color:rgba(255,255,255,.3);" href="index.html">← Voltar à operação</a>
+    <button class="btn outline" style="color:#fff;border-color:rgba(255,255,255,.3);" id="sairBtn">Sair</button>
+  </header>
+  <div class="wrap">
+    <nav class="side">
+      <button class="active" data-view="cardapio">🍽 Cardápio</button>
+      <button data-view="vendas">💰 Vendas</button>
+      <button data-view="despesas">📉 Despesas</button>
+      <button data-view="lucro">📈 Lucro líquido</button>
+      <button data-view="metas">🎯 Metas</button>
+      <button data-view="config">⚙️ Configurações</button>
+    </nav>
+    <main id="mainArea"></main>
+  </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+(function(){
+  const fmt = n => "R$ " + (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  const MESES_ABREV = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+  const uid = () => Math.random().toString(36).slice(2,10);
+  function escapeHtml(s){ const d=document.createElement('div'); d.innerText=s||''; return d.innerHTML; }
+  function parseMoney(str){ let s=String(str||'0').replace(/[^0-9,.-]/g,'').replace(/\./g,'').replace(',','.'); const v=parseFloat(s); return isNaN(v)?0:v; }
+  function moneyVal(n){ return (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+  let currentYear = new Date().getFullYear();
+  let currentView = 'cardapio';
+
+  // ---------------- LOGIN ----------------
+  async function ensureAdminDoc(){
+    const ref = db.collection('config').doc('admin');
+    const doc = await ref.get();
+    if(!doc.exists){ await ref.set({senha:'admin123'}); }
+  }
+  ensureAdminDoc();
+
+  document.getElementById('entrarBtn').addEventListener('click', tentarLogin);
+  document.getElementById('senhaInput').addEventListener('keydown', e=>{ if(e.key==='Enter') tentarLogin(); });
+  async function tentarLogin(){
+    const val = document.getElementById('senhaInput').value;
+    const doc = await db.collection('config').doc('admin').get();
+    const senhaCerta = doc.exists ? doc.data().senha : 'admin123';
+    if(val === senhaCerta){
+      sessionStorage.setItem('adminOk','1');
+      mostrarAdmin();
+    } else {
+      document.getElementById('loginErr').style.display='block';
+    }
+  }
+  document.getElementById('sairBtn').addEventListener('click', ()=>{
+    sessionStorage.removeItem('adminOk');
+    location.reload();
+  });
+  function mostrarAdmin(){
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('adminScreen').classList.remove('hidden');
+    renderView();
+  }
+  if(sessionStorage.getItem('adminOk')==='1') mostrarAdmin();
+
+  // ---------------- NAV ----------------
+  document.querySelectorAll('nav.side button').forEach(b=>b.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.side button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    currentView = b.dataset.view;
+    renderView();
+  }));
+
+  function renderView(){
+    const main = document.getElementById('mainArea');
+    if(currentView==='cardapio') renderCardapio(main);
+    else if(currentView==='vendas') renderVendas(main);
+    else if(currentView==='despesas') renderDespesas(main);
+    else if(currentView==='lucro') renderLucro(main);
+    else if(currentView==='metas') renderMetas(main);
+    else if(currentView==='config') renderConfig(main);
+  }
+
+  /* =========================================================
+     CARDÁPIO — categorias e itens
+  ========================================================= */
+  async function renderCardapio(main){
+    main.innerHTML = '<p>Carregando...</p>';
+    const [catSnap, itemSnap] = await Promise.all([
+      db.collection('categorias').orderBy('ordem').get(),
+      db.collection('cardapio').get()
+    ]);
+    const categorias = catSnap.docs.map(d=>({id:d.id, ...d.data()}));
+    const itens = itemSnap.docs.map(d=>({id:d.id, ...d.data()}));
+
+    main.innerHTML = `
+      <h2 class="title">Cardápio</h2>
+      <p class="sub">Categorias e itens aparecem automaticamente na tela de operação.</p>
+
+      <div class="card">
+        <b style="font-size:13px;">Categorias</b>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;">
+          ${categorias.map(c=>`<span class="subtab active" style="cursor:default;">${escapeHtml(c.nome)} <span class="icon-btn del-cat" data-id="${c.id}" style="margin-left:6px;">✕</span></span>`).join('') || '<span style="color:var(--ink-soft);font-size:12.5px;">Nenhuma categoria ainda.</span>'}
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Nova categoria</label><input type="text" id="novaCatNome" placeholder="Ex: Grelhados"></div>
+          <div class="field"><label>Ordem</label><input type="number" id="novaCatOrdem" style="width:70px;" value="${categorias.length}"></div>
+          <button class="btn gold" id="addCatBtn">+ adicionar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <b style="font-size:13px;">Itens do cardápio</b>
+        <div class="form-row" style="margin-top:10px;">
+          <div class="field"><label>Nome</label><input type="text" id="novoItemNome" placeholder="Ex: Executivo de Picanha"></div>
+          <div class="field"><label>Categoria</label>
+            <select id="novoItemCat">${categorias.map(c=>`<option value="${escapeHtml(c.nome)}">${escapeHtml(c.nome)}</option>`).join('')}</select>
+          </div>
+          <div class="field"><label>Preço</label><input type="text" id="novoItemPreco" inputmode="decimal" placeholder="0,00" style="width:90px;"></div>
+          <div class="field"><label>Descrição</label><input type="text" id="novoItemDesc" placeholder="opcional"></div>
+          <button class="btn gold" id="addItemBtn">+ adicionar item</button>
+        </div>
+        <table style="margin-top:10px;">
+          <thead><tr><th>Item</th><th>Categoria</th><th class="num">Preço</th><th>Ativo</th><th></th></tr></thead>
+          <tbody>
+            ${itens.map(i=>`
+              <tr>
+                <td><input type="text" class="edit-item-nome" data-id="${i.id}" value="${escapeHtml(i.nome)}" style="border:none;background:transparent;width:100%;"></td>
+                <td>
+                  <select class="edit-item-cat" data-id="${i.id}">
+                    ${categorias.map(c=>`<option value="${escapeHtml(c.nome)}" ${c.nome===i.categoria?'selected':''}>${escapeHtml(c.nome)}</option>`).join('')}
+                  </select>
+                </td>
+                <td class="num"><input type="text" class="edit-item-preco" data-id="${i.id}" value="${moneyVal(i.preco)}" style="width:80px;text-align:right;border:none;background:transparent;"></td>
+                <td><input type="checkbox" class="edit-item-ativo" data-id="${i.id}" ${i.ativo!==false?'checked':''}></td>
+                <td><span class="icon-btn del-item" data-id="${i.id}">✕</span></td>
+              </tr>`).join('') || `<tr><td colspan="5" style="color:var(--ink-soft);">Nenhum item cadastrado.</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    document.getElementById('addCatBtn').addEventListener('click', async ()=>{
+      const nome = document.getElementById('novaCatNome').value.trim();
+      const ordem = parseInt(document.getElementById('novaCatOrdem').value)||0;
+      if(!nome) return;
+      await db.collection('categorias').add({nome, ordem});
+      renderCardapio(main);
+    });
+    main.querySelectorAll('.del-cat').forEach(b=>b.addEventListener('click', async ()=>{
+      if(!confirm('Excluir categoria? Os itens dela não serão excluídos, mas ficarão sem categoria visível.')) return;
+      await db.collection('categorias').doc(b.dataset.id).delete();
+      renderCardapio(main);
+    }));
+    document.getElementById('addItemBtn').addEventListener('click', async ()=>{
+      const nome = document.getElementById('novoItemNome').value.trim();
+      const categoria = document.getElementById('novoItemCat').value;
+      const preco = parseMoney(document.getElementById('novoItemPreco').value);
+      const descricao = document.getElementById('novoItemDesc').value.trim();
+      if(!nome || !categoria) return;
+      await db.collection('cardapio').add({nome, categoria, preco, descricao, ativo:true, ordem:Date.now()});
+      renderCardapio(main);
+    });
+    main.querySelectorAll('.del-item').forEach(b=>b.addEventListener('click', async ()=>{
+      if(!confirm('Excluir item do cardápio?')) return;
+      await db.collection('cardapio').doc(b.dataset.id).delete();
+      renderCardapio(main);
+    }));
+    main.querySelectorAll('.edit-item-nome').forEach(inp=>inp.addEventListener('change', ()=> db.collection('cardapio').doc(inp.dataset.id).update({nome:inp.value.trim()})));
+    main.querySelectorAll('.edit-item-cat').forEach(sel=>sel.addEventListener('change', ()=> db.collection('cardapio').doc(sel.dataset.id).update({categoria:sel.value})));
+    main.querySelectorAll('.edit-item-preco').forEach(inp=>inp.addEventListener('change', ()=> db.collection('cardapio').doc(inp.dataset.id).update({preco:parseMoney(inp.value)})));
+    main.querySelectorAll('.edit-item-ativo').forEach(cb=>cb.addEventListener('change', ()=> db.collection('cardapio').doc(cb.dataset.id).update({ativo:cb.checked})));
+  }
+
+  /* =========================================================
+     VENDAS — relatório diário / mensal a partir de "fechamentos"
+  ========================================================= */
+  async function getFechamentosDoAno(ano){
+    const snap = await db.collection('fechamentos')
+      .where('dataStr','>=', ano+'-01-01')
+      .where('dataStr','<=', ano+'-12-31').get();
+    return snap.docs.map(d=>d.data());
+  }
+
+  async function renderVendas(main){
+    main.innerHTML = '<p>Carregando...</p>';
+    const fechamentos = await getFechamentosDoAno(currentYear);
+    const hojeStr = new Date().toISOString().slice(0,10);
+    const totalHoje = fechamentos.filter(f=>f.dataStr===hojeStr).reduce((a,f)=>a+f.total,0);
+    const mesAtual = String(new Date().getMonth()+1).padStart(2,'0');
+    const totalMes = fechamentos.filter(f=>f.dataStr.slice(5,7)===mesAtual).reduce((a,f)=>a+f.total,0);
+    const totalAno = fechamentos.reduce((a,f)=>a+f.total,0);
+
+    const porMes = MESES.map((_,idx)=>{
+      const mm = String(idx+1).padStart(2,'0');
+      return fechamentos.filter(f=>f.dataStr.slice(5,7)===mm).reduce((a,f)=>a+f.total,0);
+    });
+
+    main.innerHTML = `
+      <div class="form-row" style="justify-content:space-between;">
+        <div><h2 class="title" style="margin-bottom:0;">Vendas</h2><p class="sub">Somando fechamentos de todos os dispositivos.</p></div>
+        ${yearSelectorHtml()}
+      </div>
+      <div class="grid-3">
+        <div class="kpi"><div class="label">Hoje</div><div class="value pos">${fmt(totalHoje)}</div></div>
+        <div class="kpi"><div class="label">Este mês</div><div class="value pos">${fmt(totalMes)}</div></div>
+        <div class="kpi"><div class="label">Ano ${currentYear}</div><div class="value pos">${fmt(totalAno)}</div></div>
+      </div>
+      <div class="card" style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Vendas por mês</th>${MESES_ABREV.map(m=>`<th class="num">${m}</th>`).join('')}</tr></thead>
+          <tbody><tr><td>${currentYear}</td>${porMes.map(v=>`<td class="num money pos">${fmt(v)}</td>`).join('')}</tr></tbody>
+        </table>
+      </div>
+    `;
+    bindYearSelector(main, renderVendas);
+  }
+
+  function yearSelectorHtml(){
+    const years=[currentYear-1,currentYear,currentYear+1];
+    return `<select id="yearPicker">${years.map(y=>`<option value="${y}" ${y===currentYear?'selected':''}>${y}</option>`).join('')}</select>`;
+  }
+  function bindYearSelector(main, rerenderFn){
+    const el = main.querySelector('#yearPicker');
+    if(el) el.addEventListener('change', ()=>{ currentYear=parseInt(el.value); rerenderFn(main); });
+  }
+
+  /* =========================================================
+     DESPESAS — categorias/itens por mês (previsto/realizado/pago)
+  ========================================================= */
+  function mesKey(idx, ano){ return ano + '-' + String(idx+1).padStart(2,'0'); }
+
+  async function renderDespesas(main){
+    main.innerHTML = '<p>Carregando...</p>';
+    const snap = await db.collection('despesasCategorias').orderBy('ordem').get();
+    const categorias = snap.docs.map(d=>({id:d.id, ...d.data()}));
+
+    const catBlocks = categorias.map(cat=>{
+      const itens = cat.itens || [];
+      const rows = itens.map(item=>{
+        const cells = MESES.map((mes, idx)=>{
+          const key = mesKey(idx, currentYear);
+          const ov = (item.meses||{})[key];
+          const valor = ov && ov.valor!=null ? ov.valor : item.previsto;
+          const pago = ov ? !!ov.pago : false;
+          return `<td>
+            <div class="mes-cell ${pago?'is-pago':''}">
+              <input type="text" class="desp-valor" data-cat="${cat.id}" data-item="${item.id}" data-key="${key}" value="${moneyVal(valor)}">
+              <label><input type="checkbox" class="desp-pago" data-cat="${cat.id}" data-item="${item.id}" data-key="${key}" data-prev="${item.previsto}" ${pago?'checked':''}> pago</label>
+            </div>
+          </td>`;
+        }).join('');
+        return `<tr>
+          <td>${escapeHtml(item.nome)}</td>
+          <td class="num"><input type="text" class="desp-previsto" data-cat="${cat.id}" data-item="${item.id}" value="${moneyVal(item.previsto)}" style="width:80px;text-align:right;border:none;background:transparent;"></td>
+          ${cells}
+          <td><span class="icon-btn del-desp-item" data-cat="${cat.id}" data-item="${item.id}">✕</span></td>
+        </tr>`;
+      }).join('');
+      const totalRow = `<tr style="font-weight:700;background:#fbfaf3;"><td>Total</td><td></td>${MESES.map((_,idx)=>{
+        const key = mesKey(idx,currentYear);
+        const t = itens.reduce((a,it)=>{ const ov=(it.meses||{})[key]; return a + (ov && ov.valor!=null ? ov.valor : it.previsto); },0);
+        return `<td class="num money">${fmt(t)}</td>`;
+      }).join('')}<td></td></tr>`;
+
+      return `<div class="cat-block">
+        <div class="cat-title">${escapeHtml(cat.nome)} <span class="icon-btn del-desp-cat" data-cat="${cat.id}">✕</span></div>
+        <div style="overflow-x:auto;">
+          <table><thead><tr><th>Item</th><th class="num">Previsto</th>${MESES_ABREV.map(m=>`<th>${m}</th>`).join('')}<th></th></tr></thead>
+          <tbody>${rows}${totalRow}</tbody></table>
+        </div>
+        <div class="form-row" style="margin-top:8px;">
+          <input type="text" class="novo-desp-item-nome" data-cat="${cat.id}" placeholder="Novo item" style="width:180px;">
+          <input type="text" class="novo-desp-item-previsto" data-cat="${cat.id}" placeholder="Previsto" style="width:100px;">
+          <button class="btn small outline add-desp-item" data-cat="${cat.id}">+ item</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    main.innerHTML = `
+      <div class="form-row" style="justify-content:space-between;">
+        <div><h2 class="title" style="margin-bottom:0;">Despesas</h2><p class="sub">Valor previsto entra automático; marque "pago" para consolidar o mês.</p></div>
+        ${yearSelectorHtml()}
+      </div>
+      ${catBlocks || '<p style="color:var(--ink-soft);">Nenhuma categoria de despesa ainda.</p>'}
+      <div class="card">
+        <div class="form-row">
+          <div class="field"><label>Nova categoria de despesa</label><input type="text" id="novaDespCat" placeholder="Ex: Fornecedores"></div>
+          <button class="btn gold" id="addDespCatBtn">+ adicionar</button>
+        </div>
+      </div>
+    `;
+    bindYearSelector(main, renderDespesas);
+
+    document.getElementById('addDespCatBtn').addEventListener('click', async ()=>{
+      const nome = document.getElementById('novaDespCat').value.trim();
+      if(!nome) return;
+      await db.collection('despesasCategorias').add({nome, ordem:Date.now(), itens:[]});
+      renderDespesas(main);
+    });
+    main.querySelectorAll('.del-desp-cat').forEach(b=>b.addEventListener('click', async ()=>{
+      if(!confirm('Excluir categoria de despesa e todos os itens dela?')) return;
+      await db.collection('despesasCategorias').doc(b.dataset.cat).delete();
+      renderDespesas(main);
+    }));
+    main.querySelectorAll('.add-desp-item').forEach(b=>b.addEventListener('click', async ()=>{
+      const cid = b.dataset.cat;
+      const nome = main.querySelector(`.novo-desp-item-nome[data-cat="${cid}"]`).value.trim();
+      const previsto = parseMoney(main.querySelector(`.novo-desp-item-previsto[data-cat="${cid}"]`).value);
+      if(!nome) return;
+      const ref = db.collection('despesasCategorias').doc(cid);
+      await db.runTransaction(async t=>{
+        const doc = await t.get(ref);
+        const itens = doc.data().itens || [];
+        itens.push({id:uid(), nome, previsto, meses:{}});
+        t.update(ref, {itens});
+      });
+      renderDespesas(main);
+    }));
+    main.querySelectorAll('.del-desp-item').forEach(b=>b.addEventListener('click', async ()=>{
+      const ref = db.collection('despesasCategorias').doc(b.dataset.cat);
+      await db.runTransaction(async t=>{
+        const doc = await t.get(ref);
+        let itens = doc.data().itens || [];
+        itens = itens.filter(i=>i.id!==b.dataset.item);
+        t.update(ref, {itens});
+      });
+      renderDespesas(main);
+    }));
+    main.querySelectorAll('.desp-previsto').forEach(inp=>inp.addEventListener('change', async ()=>{
+      const ref = db.collection('despesasCategorias').doc(inp.dataset.cat);
+      const val = parseMoney(inp.value);
+      await db.runTransaction(async t=>{
+        const doc = await t.get(ref);
+        const itens = doc.data().itens || [];
+        const item = itens.find(i=>i.id===inp.dataset.item);
+        if(item) item.previsto = val;
+        t.update(ref, {itens});
+      });
+    }));
+    main.querySelectorAll('.desp-valor').forEach(inp=>inp.addEventListener('change', async ()=>{
+      const ref = db.collection('despesasCategorias').doc(inp.dataset.cat);
+      const val = parseMoney(inp.value);
+      await db.runTransaction(async t=>{
+        const doc = await t.get(ref);
+        const itens = doc.data().itens || [];
+        const item = itens.find(i=>i.id===inp.dataset.item);
+        if(item){ if(!item.meses) item.meses={}; if(!item.meses[inp.dataset.key]) item.meses[inp.dataset.key]={valor:null,pago:false}; item.meses[inp.dataset.key].valor = val; }
+        t.update(ref, {itens});
+      });
+    }));
+    main.querySelectorAll('.desp-pago').forEach(cb=>cb.addEventListener('change', async ()=>{
+      const ref = db.collection('despesasCategorias').doc(cb.dataset.cat);
+      await db.runTransaction(async t=>{
+        const doc = await t.get(ref);
+        const itens = doc.data().itens || [];
+        const item = itens.find(i=>i.id===cb.dataset.item);
+        if(item){ if(!item.meses) item.meses={}; if(!item.meses[cb.dataset.key]) item.meses[cb.dataset.key]={valor:parseFloat(cb.dataset.prev)||0,pago:false}; item.meses[cb.dataset.key].pago = cb.checked; }
+        t.update(ref, {itens});
+      });
+      renderDespesas(main);
+    }));
+  }
+
+  /* =========================================================
+     LUCRO LÍQUIDO — vendas - despesas, mês a mês
+  ========================================================= */
+  async function renderLucro(main){
+    main.innerHTML = '<p>Carregando...</p>';
+    const [fechamentos, despSnap, metaSnap] = await Promise.all([
+      getFechamentosDoAno(currentYear),
+      db.collection('despesasCategorias').get(),
+      db.collection('metas').get()
+    ]);
+    const categorias = despSnap.docs.map(d=>d.data());
+    const metas = {}; metaSnap.docs.forEach(d=>metas[d.id]=d.data().valor);
+
+    const linhas = MESES.map((mes, idx)=>{
+      const key = mesKey(idx, currentYear);
+      const receitas = fechamentos.filter(f=>f.dataStr.slice(5,7)===String(idx+1).padStart(2,'0')).reduce((a,f)=>a+f.total,0);
+      let despesas = 0;
+      categorias.forEach(cat=>(cat.itens||[]).forEach(item=>{
+        const ov = (item.meses||{})[key];
+        despesas += ov && ov.valor!=null ? ov.valor : item.previsto;
+      }));
+      const lucro = receitas - despesas;
+      const meta = metas[key] || 0;
+      return {mes, receitas, despesas, lucro, meta};
+    });
+
+    const totalReceitas = linhas.reduce((a,l)=>a+l.receitas,0);
+    const totalDespesas = linhas.reduce((a,l)=>a+l.despesas,0);
+    const totalLucro = totalReceitas - totalDespesas;
+
+    main.innerHTML = `
+      <div class="form-row" style="justify-content:space-between;">
+        <div><h2 class="title" style="margin-bottom:0;">Lucro líquido</h2><p class="sub">Vendas menos despesas, mês a mês.</p></div>
+        ${yearSelectorHtml()}
+      </div>
+      <div class="grid-3">
+        <div class="kpi"><div class="label">Receitas ${currentYear}</div><div class="value pos">${fmt(totalReceitas)}</div></div>
+        <div class="kpi"><div class="label">Despesas ${currentYear}</div><div class="value neg">${fmt(totalDespesas)}</div></div>
+        <div class="kpi"><div class="label">Lucro líquido ${currentYear}</div><div class="value ${totalLucro>=0?'pos':'neg'}">${fmt(totalLucro)}</div></div>
+      </div>
+      <div class="card" style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Mês</th><th class="num">Vendas</th><th class="num">Despesas</th><th class="num">Lucro</th><th class="num">Meta</th><th class="num">% da meta</th></tr></thead>
+          <tbody>
+            ${linhas.map(l=>`<tr>
+              <td>${l.mes}</td>
+              <td class="num money pos">${fmt(l.receitas)}</td>
+              <td class="num money neg">${fmt(l.despesas)}</td>
+              <td class="num money ${l.lucro>=0?'pos':'neg'}"><b>${fmt(l.lucro)}</b></td>
+              <td class="num money">${l.meta?fmt(l.meta):'—'}</td>
+              <td class="num">${l.meta? Math.round(l.receitas/l.meta*100)+'%' : '—'}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+    bindYearSelector(main, renderLucro);
+  }
+
+  /* =========================================================
+     METAS — meta de faturamento mensal
+  ========================================================= */
+  async function renderMetas(main){
+    main.innerHTML = '<p>Carregando...</p>';
+    const [metaSnap, fechamentos] = await Promise.all([
+      db.collection('metas').get(),
+      getFechamentosDoAno(currentYear)
+    ]);
+    const metas = {}; metaSnap.docs.forEach(d=>metas[d.id]=d.data().valor);
+
+    const rows = MESES.map((mes, idx)=>{
+      const key = mesKey(idx, currentYear);
+      const realizado = fechamentos.filter(f=>f.dataStr.slice(5,7)===String(idx+1).padStart(2,'0')).reduce((a,f)=>a+f.total,0);
+      const meta = metas[key] || 0;
+      const pct = meta ? Math.min(100, Math.round(realizado/meta*100)) : 0;
+      return `<tr>
+        <td>${mes}</td>
+        <td class="num"><input type="text" class="meta-input" data-key="${key}" value="${meta?moneyVal(meta):''}" placeholder="0,00" style="width:100px;text-align:right;"></td>
+        <td class="num money pos">${fmt(realizado)}</td>
+        <td style="min-width:140px;">
+          <div class="progress"><div style="width:${pct}%;"></div></div>
+          <span style="font-size:10.5px;color:var(--ink-soft);">${meta?pct+'%':'sem meta'}</span>
+        </td>
+      </tr>`;
+    }).join('');
+
+    main.innerHTML = `
+      <div class="form-row" style="justify-content:space-between;">
+        <div><h2 class="title" style="margin-bottom:0;">Metas mensais</h2><p class="sub">Defina a meta de faturamento de cada mês e acompanhe o progresso.</p></div>
+        ${yearSelectorHtml()}
+      </div>
+      <div class="card" style="overflow-x:auto;">
+        <table>
+          <thead><tr><th>Mês</th><th class="num">Meta</th><th class="num">Realizado</th><th>Progresso</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    `;
+    bindYearSelector(main, renderMetas);
+    main.querySelectorAll('.meta-input').forEach(inp=>inp.addEventListener('change', async ()=>{
+      const val = parseMoney(inp.value);
+      await db.collection('metas').doc(inp.dataset.key).set({valor:val});
+    }));
+  }
+
+  /* =========================================================
+     CONFIGURAÇÕES — senha, mesas
+  ========================================================= */
+  async function renderConfig(main){
+    const [adminDoc, mesasDoc, geralDoc] = await Promise.all([
+      db.collection('config').doc('admin').get(),
+      db.collection('config').doc('mesas').get(),
+      db.collection('config').doc('geral').get()
+    ]);
+    const mesas = (mesasDoc.exists && mesasDoc.data().lista) ? mesasDoc.data().lista : [];
+    const couvertAtual = geralDoc.exists && geralDoc.data().couvertPorPessoa!=null ? geralDoc.data().couvertPorPessoa : 15;
+
+    main.innerHTML = `
+      <h2 class="title">Configurações</h2>
+      <div class="card">
+        <b style="font-size:13px;">Trocar senha do admin</b>
+        <div class="form-row" style="margin-top:10px;">
+          <div class="field"><label>Nova senha</label><input type="text" id="novaSenha" placeholder="Nova senha"></div>
+          <button class="btn gold" id="salvarSenhaBtn">Salvar senha</button>
+        </div>
+      </div>
+      <div class="card">
+        <b style="font-size:13px;">Couvert artístico</b>
+        <div class="form-row" style="margin-top:10px;">
+          <div class="field"><label>Valor por pessoa</label><input type="text" id="couvertValor" style="width:100px;" value="${moneyVal(couvertAtual)}"></div>
+          <button class="btn gold" id="salvarCouvertBtn">Salvar</button>
+        </div>
+      </div>
+      <div class="card">
+        <b style="font-size:13px;">Mesas cadastradas</b>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;">
+          ${mesas.map(m=>`<span class="subtab active" style="cursor:default;">${m} <span class="icon-btn del-mesa" data-m="${m}" style="margin-left:4px;">✕</span></span>`).join('') || '<span style="color:var(--ink-soft);font-size:12.5px;">Nenhuma mesa cadastrada.</span>'}
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Nº da mesa</label><input type="text" id="novaMesaAdmin" style="width:100px;"></div>
+          <button class="btn outline" id="addMesaAdminBtn">+ mesa</button>
+        </div>
+      </div>
+    `;
+    document.getElementById('salvarSenhaBtn').addEventListener('click', async ()=>{
+      const v = document.getElementById('novaSenha').value.trim();
+      if(!v){ alert('Digite uma senha.'); return; }
+      await db.collection('config').doc('admin').set({senha:v});
+      alert('Senha atualizada.');
+      document.getElementById('novaSenha').value='';
+    });
+    document.getElementById('salvarCouvertBtn').addEventListener('click', async ()=>{
+      const v = parseMoney(document.getElementById('couvertValor').value);
+      await db.collection('config').doc('geral').set({couvertPorPessoa:v}, {merge:true});
+      alert('Valor do couvert atualizado.');
+    });
+    document.getElementById('addMesaAdminBtn').addEventListener('click', async ()=>{
+      const v = document.getElementById('novaMesaAdmin').value.trim();
+      if(!v) return;
+      const nova = [...mesas, isNaN(v)?v:Number(v)];
+      await db.collection('config').doc('mesas').set({lista:nova});
+      renderConfig(main);
+    });
+    main.querySelectorAll('.del-mesa').forEach(b=>b.addEventListener('click', async ()=>{
+      if(!confirm('Remover mesa ' + b.dataset.m + '?')) return;
+      const nova = mesas.filter(m=>String(m)!==String(b.dataset.m));
+      await db.collection('config').doc('mesas').set({lista:nova});
+      renderConfig(main);
+    }));
+  }
+})();
+</script>
+</body>
+</html>

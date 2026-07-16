@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chopperia Nº 1 — Controle de Mesas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1c1712;
+    --ink-soft:#7a7167;
+    --paper:#f7f2e7;
+    --panel:#ffffff;
+    --line:#e4dac8;
+    --gold:#c99a2e;
+    --gold-deep:#8a6b1f;
+    --gold-soft:#f3e6bf;
+    --ok:#43744a;
+    --ok-soft:#dde9de;
+    --danger:#a4423a;
+    --danger-soft:#f3ddda;
+    --purple:#7a5c9e;
+    --purple-soft:#e9e2f0;
+    --mono:'JetBrains Mono', ui-monospace, monospace;
+    --serif:'Fraunces', Georgia, serif;
+    --sans:'Inter', -apple-system, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);}
+  button, input, select{font-family:var(--sans);}
+
+  /* ---------- HEADER ---------- */
+  header{
+    background:var(--ink); color:#f7f2e7; padding:14px 20px;
+    display:flex; align-items:center; gap:14px; flex-wrap:wrap;
+    border-bottom:3px solid var(--gold);
+  }
+  header img{height:44px; width:44px; object-fit:contain;}
+  header .brand{font-family:var(--serif); font-size:19px; font-weight:700; letter-spacing:.3px;}
+  header .brand small{display:block; font-family:var(--sans); font-size:10.5px; font-weight:400; color:var(--gold-soft); letter-spacing:1.5px; text-transform:uppercase; margin-top:2px;}
+  header .spacer{flex:1;}
+  header .device-tag{font-size:11.5px; color:var(--gold-soft); background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); padding:5px 10px; border-radius:20px; cursor:pointer;}
+  .btn{background:var(--ink); color:#fff; border:none; border-radius:7px; font-size:12.5px; font-weight:600; padding:9px 15px; cursor:pointer;}
+  .btn.gold{background:var(--gold); color:#241b06;}
+  .btn.gold:hover{background:var(--gold-deep); color:#fff;}
+  .btn.ghost{background:rgba(255,255,255,.08); color:#fff; border:1px solid rgba(255,255,255,.25);}
+  .btn.ghost:hover{background:rgba(255,255,255,.16);}
+  .btn.outline{background:transparent; border:1px solid var(--line); color:var(--ink);}
+  .btn.outline:hover{border-color:var(--ink);}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+
+  /* ---------- LAYOUT ---------- */
+  .wrap{display:flex; height:calc(100vh - 74px); overflow:hidden;}
+  .left{width:320px; flex-shrink:0; overflow-y:auto; padding:16px; border-right:1px solid var(--line); display:flex; flex-direction:column;}
+  .right{flex:1; overflow-y:auto; padding:18px;}
+  @media (max-width: 860px){
+    .wrap{flex-direction:column; height:auto; overflow:visible;}
+    .left, .right{width:100%;}
+    .left{border-right:none; border-bottom:1px solid var(--line);}
+  }
+
+  h2.title{font-family:var(--serif); font-size:17px; margin:0 0 2px 0;}
+  p.sub{margin:0 0 12px 0; color:var(--ink-soft); font-size:12px;}
+
+  /* ---------- MAPA DE MESAS ---------- */
+  .grid-mesas{display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; margin-bottom:10px;}
+  .mesa-btn{
+    aspect-ratio:1; border-radius:9px; border:2px solid transparent; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-family:var(--serif); font-size:16px; font-weight:700; color:#fff; background:var(--ok);
+    transition:transform .1s ease; position:relative;
+  }
+  .mesa-btn:active{transform:scale(.94);}
+  .mesa-btn.ocupada{background:var(--danger);}
+  .mesa-btn.selecionada{border-color:var(--gold); box-shadow:0 0 0 3px var(--gold-soft);}
+  .mesa-btn .qtd{position:absolute; bottom:-3px; right:-3px; background:var(--ink); color:#fff; font-family:var(--sans); font-size:8.5px; font-weight:700; border-radius:50%; width:16px; height:16px; display:flex; align-items:center; justify-content:center;}
+  .legend{display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap;}
+  .legend span{font-size:10.5px; color:var(--ink-soft); display:flex; align-items:center; gap:4px;}
+  .dot{width:8px; height:8px; border-radius:50%; display:inline-block;}
+  .dot.livre{background:var(--ok);}
+  .dot.ocupada{background:var(--danger);}
+  .dot.sel{background:var(--gold);}
+  .add-mesa{display:flex; gap:6px; margin-bottom:16px;}
+  .add-mesa input{flex:1; padding:7px 9px; border:1px solid var(--line); border-radius:6px; font-size:12.5px;}
+
+  /* ---------- RESUMO DA MESA (coluna esquerda) ---------- */
+  .resumo-box{border-top:1px solid var(--line); padding-top:14px; margin-top:auto;}
+  .resumo-head{display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;}
+  .resumo-head h3{font-family:var(--serif); font-size:15px; margin:0;}
+  .resumo-head .it-count{font-size:11px; color:var(--ink-soft); background:var(--paper); border:1px solid var(--line); border-radius:10px; padding:2px 8px;}
+  .resumo-zerar{font-size:10.5px; color:var(--danger); cursor:pointer; background:none; border:none; padding:0;}
+  .comanda-list{border:1px solid var(--line); border-radius:8px; background:var(--panel); overflow:hidden; margin-bottom:10px; max-height:180px; overflow-y:auto;}
+  .comanda-row{display:flex; align-items:center; gap:5px; padding:7px 8px; border-bottom:1px solid var(--line); font-size:11.5px;}
+  .comanda-row:last-child{border-bottom:none;}
+  .comanda-row .nome{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .qtd-ctrl{display:flex; align-items:center; gap:4px;}
+  .qtd-ctrl button{width:18px; height:18px; border-radius:4px; border:1px solid var(--line); background:#fff; cursor:pointer; font-weight:700; font-size:11px; line-height:1;}
+  .comanda-row .preco{font-family:var(--mono); width:58px; text-align:right; font-size:11px;}
+  .comanda-row .rm{color:var(--danger); cursor:pointer; font-size:13px;}
+  .empty-msg-mini{color:var(--ink-soft); font-size:12px; padding:16px 10px; text-align:center;}
+
+  .ajuste-row{display:flex; align-items:center; justify-content:space-between; font-size:12.5px; padding:5px 0;}
+  .ajuste-row label{display:flex; align-items:center; gap:6px; cursor:pointer;}
+  .ajuste-row input[type=checkbox]{accent-color:var(--gold); width:15px; height:15px;}
+  .pessoas-input{width:44px; padding:4px 6px; border:1px solid var(--line); border-radius:5px; font-size:11.5px; text-align:center;}
+  .totais-mini{margin-top:8px; border-top:1px dashed var(--line); padding-top:8px;}
+  .totais-mini .linha{display:flex; justify-content:space-between; font-size:12px; padding:2px 0; color:var(--ink-soft);}
+  .totais-mini .linha.total{font-size:16px; font-weight:700; color:var(--ink); padding-top:4px;}
+  .fechar-btn{width:100%; padding:13px; font-size:14px; border-radius:8px; margin-top:10px; background:var(--ok);}
+  .fechar-btn:hover:not(:disabled){background:#356239;}
+
+  /* ---------- CATEGORIAS / CARDÁPIO (coluna direita) ---------- */
+  .cat-tabs{display:grid; grid-template-columns:repeat(4, 1fr); gap:7px; margin-bottom:16px;}
+  @media (max-width:700px){.cat-tabs{grid-template-columns:repeat(2,1fr);}}
+  .cat-tab{
+    text-align:center; font-size:12.5px; font-weight:600; color:var(--ink-soft); background:var(--panel);
+    border:1px solid var(--line); border-radius:8px; padding:11px 8px; cursor:pointer;
+  }
+  .cat-tab.active{background:var(--gold); color:#241b06; border-color:var(--gold);}
+  h2.cat-heading{font-family:var(--serif); font-size:18px; margin:4px 0 14px 0;}
+  .item-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(260px,1fr)); gap:12px;}
+  .item-card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px;}
+  .item-card .nome{font-weight:700; font-size:14px;}
+  .item-card .desc{color:var(--ink-soft); font-size:11.5px; margin:3px 0 8px 0; min-height:14px;}
+  .item-card .preco{font-family:var(--mono); font-weight:700; color:var(--danger); font-size:15px; margin-bottom:10px; display:block;}
+  .item-card .row{display:flex; align-items:center; gap:8px;}
+  .stepper{display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:7px; padding:4px 8px;}
+  .stepper button{width:22px; height:22px; border-radius:5px; border:none; background:var(--paper); cursor:pointer; font-weight:700;}
+  .stepper span{min-width:14px; text-align:center; font-size:13px;}
+  .item-add-btn{flex:1; background:var(--gold); color:#241b06; border:none; border-radius:7px; font-size:12.5px; font-weight:700; padding:9px 10px; cursor:pointer;}
+  .item-add-btn:hover{background:var(--gold-deep); color:#fff;}
+  .empty-msg{color:var(--ink-soft); font-size:13px; padding:30px 10px; text-align:center;}
+
+  /* ---------- MODAL ---------- */
+  .modal-bg{position:fixed; inset:0; background:rgba(20,17,16,.55); display:flex; align-items:center; justify-content:center; z-index:50; padding:16px;}
+  .modal{background:#fff; border-radius:12px; padding:22px; max-width:420px; width:100%; max-height:85vh; overflow-y:auto;}
+  .modal h3{font-family:var(--serif); margin:0 0 4px 0; font-size:17px;}
+  .modal p{color:var(--ink-soft); font-size:12.5px; margin:0 0 16px 0;}
+  .pagamento-opts{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:16px;}
+  .pag-opt{border:1.5px solid var(--line); border-radius:8px; padding:12px; text-align:center; cursor:pointer; font-size:13px; font-weight:600;}
+  .pag-opt.active{border-color:var(--gold); background:var(--gold-soft);}
+  .modal-actions{display:flex; gap:8px; justify-content:flex-end;}
+  input[type=text]{padding:8px 10px; border:1px solid var(--line); border-radius:6px; font-size:13px; width:100%;}
+
+  /* ---------- RECIBO (impressão térmica) ---------- */
+  #recibo{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #recibo, #recibo *{visibility:visible;}
+    #recibo{display:block; position:absolute; top:0; left:0; width:78mm; padding:6px; font-family:var(--mono); font-size:11px; color:#000;}
+    #recibo h4{font-family:var(--sans); text-align:center; margin:0 0 2px 0; font-size:13px;}
+    #recibo .c{text-align:center;}
+    #recibo hr{border:none; border-top:1px dashed #000; margin:6px 0;}
+    #recibo .li{display:flex; justify-content:space-between;}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="logo.jpg" alt="Chopperia Nº 1" onerror="this.style.display='none'">
+  <div class="brand">Chopperia Nº 1<small>Gerenciamento de mesas e pedidos</small></div>
+  <div class="spacer"></div>
+  <div class="device-tag" id="deviceTag" title="Clique para alterar">📱 dispositivo</div>
+  <button class="btn ghost" id="btnHistorico">📊 Relatório do dia</button>
+  <a class="btn gold" href="admin.html">🔐 Admin</a>
+</header>
+
+<div class="wrap">
+  <div class="left">
+    <h2 class="title">Mapa de mesas</h2>
+    <p class="sub">Toque em uma mesa para abrir a comanda.</p>
+    <div class="grid-mesas" id="gridMesas"></div>
+    <div class="legend">
+      <span><i class="dot livre"></i> Livre</span>
+      <span><i class="dot ocupada"></i> Ocupada</span>
+      <span><i class="dot sel"></i> Selecionada</span>
+    </div>
+    <div class="add-mesa">
+      <input type="text" id="novaMesaInput" placeholder="Nº ou código (ex: V-9)">
+      <button class="btn outline" id="addMesaBtn">+ mesa</button>
+    </div>
+
+    <div class="resumo-box" id="resumoMesa">
+      <div class="empty-msg-mini">Selecione uma mesa para ver o resumo.</div>
+    </div>
+  </div>
+
+  <div class="right" id="rightPanel">
+    <div class="empty-msg" style="margin-top:60px;">Selecione uma mesa e escolha uma categoria do cardápio para começar a lançar os itens.</div>
+  </div>
+</div>
+
+<!-- Modal pagamento -->
+<div class="modal-bg" id="modalPagamento" style="display:none;">
+  <div class="modal">
+    <h3>Fechar conta — Mesa <span id="mFecharMesa"></span></h3>
+    <p>Selecione a forma de pagamento para concluir o fechamento.</p>
+    <div class="pagamento-opts" id="pagOpts">
+      <div class="pag-opt" data-p="Dinheiro">💵 Dinheiro</div>
+      <div class="pag-opt" data-p="Débito">💳 Débito</div>
+      <div class="pag-opt" data-p="Crédito">💳 Crédito</div>
+      <div class="pag-opt" data-p="Pix">📱 Pix</div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn outline" id="cancelarFechar">Cancelar</button>
+      <button class="btn gold" id="confirmarFechar" disabled>Fechar e imprimir</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal nome do dispositivo -->
+<div class="modal-bg" id="modalDevice" style="display:none;">
+  <div class="modal">
+    <h3>Identifique este dispositivo</h3>
+    <p>Ex: "Caixa", "Garçom Ana", "Tablet 2". Isso aparece no relatório do dia.</p>
+    <input type="text" id="deviceInput" placeholder="Nome deste dispositivo">
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn gold" id="salvarDevice">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal relatório do dia -->
+<div class="modal-bg" id="modalRelatorio" style="display:none;">
+  <div class="modal" style="max-width:520px;">
+    <h3>Relatório do dia</h3>
+    <p>Soma de todos os fechamentos de conta, de todos os dispositivos.</p>
+    <input type="date" id="dataRelatorio" style="margin-bottom:12px;">
+    <div id="conteudoRelatorio"></div>
+    <div class="modal-actions" style="margin-top:14px;">
+      <button class="btn outline" id="fecharRelatorio">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Recibo para impressão -->
+<div id="recibo">
+  <h4>Chopperia Nº 1</h4>
+  <div class="c">Desde 1992</div>
+  <hr>
+  <div id="reciboConteudo"></div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+<script>
+(function(){
+  const fmt = n => "R$ " + (Number(n)||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+  const hoje = () => new Date().toISOString().slice(0,10);
+  const uid = () => Math.random().toString(36).slice(2,10);
+  const MESAS_PADRAO = [2,3,4,5,6,7,8,10,11,13,14,15,16,20,21,22,23,24,25,26,34,38,'V-1','V-2','V-3','V-4','V-5','V-6','V-7','V-8'];
+
+  let mesasConfig = [];
+  let mesasData = {};
+  let categorias = [];
+  let cardapio = [];
+  let geralConfig = {couvertPorPessoa: 15};
+  let mesaSelecionada = null;
+  let catAtiva = null;
+  let pagamentoEscolhido = null;
+
+  // ---------- device tag ----------
+  const deviceTag = document.getElementById('deviceTag');
+  function loadDeviceName(){
+    const n = localStorage.getItem('nomeDispositivo');
+    if(!n){ document.getElementById('modalDevice').style.display='flex'; }
+    else { deviceTag.textContent = '📱 ' + n; }
+  }
+  deviceTag.addEventListener('click', ()=>{
+    document.getElementById('deviceInput').value = localStorage.getItem('nomeDispositivo')||'';
+    document.getElementById('modalDevice').style.display='flex';
+  });
+  document.getElementById('salvarDevice').addEventListener('click', ()=>{
+    const v = document.getElementById('deviceInput').value.trim();
+    if(!v) return;
+    localStorage.setItem('nomeDispositivo', v);
+    deviceTag.textContent = '📱 ' + v;
+    document.getElementById('modalDevice').style.display='none';
+  });
+  loadDeviceName();
+
+  // ---------- seed inicial (só roda se o banco ainda estiver vazio) ----------
+  (async function seedInicial(){
+    const mesasRef = db.collection('config').doc('mesas');
+    const mesasDoc = await mesasRef.get();
+    if(!mesasDoc.exists){
+      await mesasRef.set({lista: MESAS_PADRAO});
+    }
+    const catSnap = await db.collection('categorias').limit(1).get();
+    if(catSnap.empty){
+      const nomes = ['Executivos','Grelhados','Aperitivos','Guarnições','Bebidas','Pizza','Vinhos','Sobremesa','Extras'];
+      const batch = db.batch();
+      nomes.forEach((nome, idx)=> batch.set(db.collection('categorias').doc(), {nome, ordem: idx}));
+      await batch.commit();
+    }
+    const geralRef = db.collection('config').doc('geral');
+    const geralDoc = await geralRef.get();
+    if(!geralDoc.exists){ await geralRef.set({couvertPorPessoa: 15}); }
+  })();
+
+  // ---------- listeners Firestore ----------
+  db.collection('config').doc('mesas').onSnapshot(doc=>{
+    mesasConfig = (doc.exists && doc.data().lista) ? doc.data().lista : [];
+    renderGridMesas();
+  });
+
+  db.collection('config').doc('geral').onSnapshot(doc=>{
+    if(doc.exists) geralConfig = doc.data();
+    if(mesaSelecionada) renderResumo();
+  });
+
+  db.collection('mesas').onSnapshot(snap=>{
+    mesasData = {};
+    snap.forEach(d=> mesasData[d.id] = d.data());
+    renderGridMesas();
+    if(mesaSelecionada){ renderResumo(); renderCardapioPanel(); }
+  });
+
+  db.collection('categorias').orderBy('ordem').onSnapshot(snap=>{
+    categorias = snap.docs.map(d=>({id:d.id, ...d.data()}));
+    if(!catAtiva && categorias.length) catAtiva = categorias[0].nome;
+    if(mesaSelecionada) renderCardapioPanel();
+  });
+
+  db.collection('cardapio').onSnapshot(snap=>{
+    cardapio = snap.docs.map(d=>({id:d.id, ...d.data()})).filter(i=>i.ativo!==false);
+    if(mesaSelecionada) renderCardapioPanel();
+  });
+
+  // ---------- grid de mesas ----------
+  function renderGridMesas(){
+    const grid = document.getElementById('gridMesas');
+    grid.innerHTML = mesasConfig.map(n=>{
+      const m = mesasData[n];
+      const ocupada = m && m.itens && m.itens.length;
+      const qtd = ocupada ? m.itens.reduce((a,i)=>a+i.qtd,0) : 0;
+      return `<button class="mesa-btn ${ocupada?'ocupada':''} ${String(mesaSelecionada)===String(n)?'selecionada':''}" data-mesa="${n}">
+        ${n}${ocupada?`<span class="qtd">${qtd}</span>`:''}
+      </button>`;
+    }).join('');
+    grid.querySelectorAll('.mesa-btn').forEach(b=>b.addEventListener('click', ()=>{
+      mesaSelecionada = b.dataset.mesa;
+      if(!catAtiva && categorias.length) catAtiva = categorias[0].nome;
+      renderGridMesas();
+      renderResumo();
+      renderCardapioPanel();
+    }));
+  }
+
+  document.getElementById('addMesaBtn').addEventListener('click', async ()=>{
+    const input = document.getElementById('novaMesaInput');
+    const n = input.value.trim();
+    if(!n) return;
+    if(mesasConfig.map(String).includes(n)) { input.value=''; return; }
+    const nova = [...mesasConfig, isNaN(n)?n:Number(n)];
+    await db.collection('config').doc('mesas').set({lista: nova}, {merge:true});
+    input.value = '';
+  });
+
+  function getMesaDoc(n){
+    return mesasData[n] || {status:'livre', itens:[], servicoAtivo:true, couvertAtivo:false, pessoas:0};
+  }
+  function parseMoney(str){
+    let s = String(str||'0').replace(/[^0-9,.-]/g,'').replace(/\./g,'').replace(',','.');
+    const v = parseFloat(s); return isNaN(v)?0:v;
+  }
+  function escapeHtml(s){ const d=document.createElement('div'); d.innerText=s||''; return d.innerHTML; }
+  async function saveMesaField(fields){
+    await db.collection('mesas').doc(String(mesaSelecionada)).set(fields, {merge:true});
+  }
+
+  /* ================= RESUMO DA MESA (coluna esquerda) ================= */
+  function renderResumo(){
+    const box = document.getElementById('resumoMesa');
+    if(!mesaSelecionada){ box.innerHTML = `<div class="empty-msg-mini">Selecione uma mesa para ver o resumo.</div>`; return; }
+    const m = getMesaDoc(mesaSelecionada);
+    const itens = m.itens || [];
+    const subtotal = itens.reduce((a,i)=>a + i.preco*i.qtd, 0);
+    const servico = m.servicoAtivo!==false ? subtotal*0.10 : 0;
+    const pessoas = Number(m.pessoas)||0;
+    const couvertUnit = Number(geralConfig.couvertPorPessoa)||0;
+    const couvert = m.couvertAtivo ? pessoas*couvertUnit : 0;
+    const total = subtotal + servico + couvert;
+
+    box.innerHTML = `
+      <div class="resumo-head">
+        <h3>Mesa ${mesaSelecionada}</h3>
+        <span class="it-count">${itens.length} it.</span>
+      </div>
+      <div class="comanda-list">
+        ${itens.length ? itens.map(i=>`
+          <div class="comanda-row">
+            <span class="nome">${escapeHtml(i.nome)}</span>
+            <div class="qtd-ctrl">
+              <button data-op="dec" data-id="${i.itemId}">−</button>
+              <span>${i.qtd}</span>
+              <button data-op="inc" data-id="${i.itemId}">+</button>
+            </div>
+            <span class="preco">${fmt(i.preco*i.qtd)}</span>
+            <span class="rm" data-op="rm" data-id="${i.itemId}">✕</span>
+          </div>`).join('') : `<div class="empty-msg-mini">Sem pedidos</div>`}
+      </div>
+
+      <div class="ajuste-row">
+        <label><input type="checkbox" id="servicoChk" ${m.servicoAtivo!==false?'checked':''}> 10% serviço</label>
+        <span>${fmt(servico)}</span>
+      </div>
+      <div class="ajuste-row">
+        <label><input type="checkbox" id="couvertChk" ${m.couvertAtivo?'checked':''}> Couv. (${fmt(couvertUnit)}/pessoa)</label>
+        <input type="number" min="0" class="pessoas-input" id="pessoasInput" value="${pessoas||''}" placeholder="0">
+      </div>
+
+      <div class="totais-mini">
+        <div class="linha"><span>Sub</span><span>${fmt(subtotal)}</span></div>
+        <div class="linha total"><span>Total</span><span>${fmt(total)}</span></div>
+      </div>
+
+      <button class="btn fechar-btn" id="fecharContaBtn" ${!itens.length?'disabled':''}>Fechar Conta</button>
+      ${itens.length ? `<button class="resumo-zerar" id="zerarMesaBtn" style="margin-top:8px;">Zerar pedido desta mesa</button>` : ''}
+    `;
+
+    box.querySelectorAll('.qtd-ctrl button').forEach(b=>b.addEventListener('click', ()=> changeQtd(b.dataset.id, b.dataset.op)));
+    box.querySelectorAll('.rm').forEach(b=>b.addEventListener('click', ()=> changeQtd(b.dataset.id, 'rm')));
+    const servicoChk = document.getElementById('servicoChk');
+    if(servicoChk) servicoChk.addEventListener('change', ()=> saveMesaField({servicoAtivo: servicoChk.checked}));
+    const couvertChk = document.getElementById('couvertChk');
+    if(couvertChk) couvertChk.addEventListener('change', ()=> saveMesaField({couvertAtivo: couvertChk.checked}));
+    const pessoasInput = document.getElementById('pessoasInput');
+    if(pessoasInput) pessoasInput.addEventListener('change', ()=> saveMesaField({pessoas: parseInt(pessoasInput.value)||0}));
+    const fecharBtn = document.getElementById('fecharContaBtn');
+    if(fecharBtn) fecharBtn.addEventListener('click', abrirModalFechar);
+    const zerarBtn = document.getElementById('zerarMesaBtn');
+    if(zerarBtn) zerarBtn.addEventListener('click', async ()=>{
+      if(!confirm('Zerar o pedido em andamento da Mesa ' + mesaSelecionada + '? Isso não gera fechamento nem relatório.')) return;
+      await db.collection('mesas').doc(String(mesaSelecionada)).set({itens:[], status:'livre', couvertAtivo:false, pessoas:0, servicoAtivo:true}, {merge:true});
+    });
+  }
+
+  /* ================= CARDÁPIO (coluna direita) ================= */
+  function renderCardapioPanel(){
+    const right = document.getElementById('rightPanel');
+    if(!mesaSelecionada){ right.innerHTML = `<div class="empty-msg" style="margin-top:60px;">Selecione uma mesa e escolha uma categoria do cardápio para começar a lançar os itens.</div>`; return; }
+
+    const catTabs = categorias.map(c=>`<div class="cat-tab ${catAtiva===c.nome?'active':''}" data-cat="${c.nome}">${escapeHtml(c.nome)}</div>`).join('');
+    const itensDoCardapio = cardapio.filter(i=>i.categoria===catAtiva).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+
+    right.innerHTML = `
+      <div class="cat-tabs">${catTabs || '<span style="color:var(--ink-soft);font-size:12.5px;">Cadastre categorias no Admin.</span>'}</div>
+      <h2 class="cat-heading">${escapeHtml(catAtiva||'')}</h2>
+      <div class="item-grid">
+        ${itensDoCardapio.length ? itensDoCardapio.map(i=>`
+          <div class="item-card">
+            <div class="nome">${escapeHtml(i.nome)}</div>
+            <div class="desc">${escapeHtml(i.descricao||'')}</div>
+            <span class="preco">${fmt(i.preco)}</span>
+            <div class="row">
+              <div class="stepper">
+                <button data-stepdown="${i.id}">−</button>
+                <span id="qtd-${i.id}">1</span>
+                <button data-stepup="${i.id}">+</button>
+              </div>
+              <button class="item-add-btn" data-additem="${i.id}">🛒 Add</button>
+            </div>
+          </div>`).join('') : `<div class="empty-msg">Nenhum item nesta categoria ainda. Cadastre no painel Admin.</div>`}
+      </div>
+    `;
+
+    right.querySelectorAll('.cat-tab').forEach(t=>t.addEventListener('click', ()=>{ catAtiva=t.dataset.cat; renderCardapioPanel(); }));
+    right.querySelectorAll('[data-stepup]').forEach(b=>b.addEventListener('click', ()=>{
+      const el = document.getElementById('qtd-'+b.dataset.stepup);
+      el.textContent = (parseInt(el.textContent)||1) + 1;
+    }));
+    right.querySelectorAll('[data-stepdown]').forEach(b=>b.addEventListener('click', ()=>{
+      const el = document.getElementById('qtd-'+b.dataset.stepdown);
+      el.textContent = Math.max(1, (parseInt(el.textContent)||1) - 1);
+    }));
+    right.querySelectorAll('[data-additem]').forEach(b=>b.addEventListener('click', ()=>{
+      const qtdEl = document.getElementById('qtd-'+b.dataset.additem);
+      const qtd = parseInt(qtdEl.textContent)||1;
+      addItemToMesa(b.dataset.additem, qtd);
+      qtdEl.textContent = 1;
+    }));
+  }
+
+  async function addItemToMesa(itemId, qtdAdicionar){
+    const item = cardapio.find(i=>i.id===itemId);
+    if(!item) return;
+    const ref = db.collection('mesas').doc(String(mesaSelecionada));
+    await db.runTransaction(async t=>{
+      const doc = await t.get(ref);
+      const data = doc.exists ? doc.data() : {status:'ocupada', itens:[], servicoAtivo:true, couvertAtivo:false, pessoas:0};
+      const itens = data.itens || [];
+      const existente = itens.find(i=>i.itemId===itemId);
+      if(existente) existente.qtd += qtdAdicionar;
+      else itens.push({itemId, nome:item.nome, preco:item.preco, qtd:qtdAdicionar});
+      t.set(ref, {itens, status:'ocupada', abertaEm: data.abertaEm || firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+    });
+  }
+
+  async function changeQtd(itemId, op){
+    const ref = db.collection('mesas').doc(String(mesaSelecionada));
+    await db.runTransaction(async t=>{
+      const doc = await t.get(ref);
+      if(!doc.exists) return;
+      const data = doc.data();
+      let itens = data.itens || [];
+      const idx = itens.findIndex(i=>i.itemId===itemId);
+      if(idx<0) return;
+      if(op==='inc') itens[idx].qtd += 1;
+      if(op==='dec') itens[idx].qtd = Math.max(1, itens[idx].qtd-1);
+      if(op==='rm') itens.splice(idx,1);
+      t.set(ref, {itens, status: itens.length?'ocupada':'livre'}, {merge:true});
+    });
+  }
+
+  /* ================= FECHAR CONTA ================= */
+  function abrirModalFechar(){
+    pagamentoEscolhido = null;
+    document.getElementById('mFecharMesa').textContent = mesaSelecionada;
+    document.querySelectorAll('.pag-opt').forEach(o=>o.classList.remove('active'));
+    document.getElementById('confirmarFechar').disabled = true;
+    document.getElementById('modalPagamento').style.display='flex';
+  }
+  document.getElementById('cancelarFechar').addEventListener('click', ()=>{ document.getElementById('modalPagamento').style.display='none'; });
+  document.getElementById('pagOpts').addEventListener('click', (e)=>{
+    const opt = e.target.closest('.pag-opt'); if(!opt) return;
+    document.querySelectorAll('.pag-opt').forEach(o=>o.classList.remove('active'));
+    opt.classList.add('active');
+    pagamentoEscolhido = opt.dataset.p;
+    document.getElementById('confirmarFechar').disabled = false;
+  });
+  document.getElementById('confirmarFechar').addEventListener('click', async ()=>{
+    const m = getMesaDoc(mesaSelecionada);
+    const itens = m.itens || [];
+    const subtotal = itens.reduce((a,i)=>a+i.preco*i.qtd,0);
+    const servico = m.servicoAtivo!==false ? subtotal*0.10 : 0;
+    const pessoas = Number(m.pessoas)||0;
+    const couvertUnit = Number(geralConfig.couvertPorPessoa)||0;
+    const couvert = m.couvertAtivo ? pessoas*couvertUnit : 0;
+    const total = subtotal + servico + couvert;
+    const dispositivo = localStorage.getItem('nomeDispositivo') || 'Não identificado';
+
+    await db.collection('fechamentos').add({
+      mesaId: mesaSelecionada,
+      itens, subtotal, servico, couvert, pessoas, total,
+      formaPagamento: pagamentoEscolhido,
+      dispositivo,
+      dataStr: hoje(),
+      dataHora: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    imprimirRecibo({mesa:mesaSelecionada, itens, subtotal, servico, couvert, total, formaPagamento:pagamentoEscolhido});
+
+    await db.collection('mesas').doc(String(mesaSelecionada)).set({itens:[], status:'livre', couvertAtivo:false, pessoas:0, servicoAtivo:true}, {merge:true});
+    document.getElementById('modalPagamento').style.display='none';
+  });
+
+  function imprimirRecibo(dados){
+    const linhas = dados.itens.map(i=>`<div class="li"><span>${i.qtd}x ${escapeHtml(i.nome)}</span><span>${fmt(i.preco*i.qtd)}</span></div>`).join('');
+    document.getElementById('reciboConteudo').innerHTML = `
+      <div class="c">Mesa ${dados.mesa} — ${new Date().toLocaleString('pt-BR')}</div><hr>
+      ${linhas}<hr>
+      <div class="li"><span>Subtotal</span><span>${fmt(dados.subtotal)}</span></div>
+      <div class="li"><span>Serviço (10%)</span><span>${fmt(dados.servico)}</span></div>
+      <div class="li"><span>Couvert</span><span>${fmt(dados.couvert)}</span></div>
+      <div class="li"><b>TOTAL</b><b>${fmt(dados.total)}</b></div><hr>
+      <div class="c">Pagamento: ${dados.formaPagamento}</div>
+      <div class="c">Obrigado pela visita!</div>
+    `;
+    window.print();
+  }
+
+  /* ================= RELATÓRIO DO DIA ================= */
+  document.getElementById('btnHistorico').addEventListener('click', ()=>{
+    document.getElementById('dataRelatorio').value = hoje();
+    carregarRelatorio(hoje());
+    document.getElementById('modalRelatorio').style.display='flex';
+  });
+  document.getElementById('fecharRelatorio').addEventListener('click', ()=>{ document.getElementById('modalRelatorio').style.display='none'; });
+  document.getElementById('dataRelatorio').addEventListener('change', (e)=> carregarRelatorio(e.target.value));
+
+  async function carregarRelatorio(dataStr){
+    const el = document.getElementById('conteudoRelatorio');
+    el.innerHTML = '<p>Carregando...</p>';
+    const snap = await db.collection('fechamentos').where('dataStr','==',dataStr).get();
+    const fechamentos = snap.docs.map(d=>d.data());
+    const total = fechamentos.reduce((a,f)=>a+f.total,0);
+    const porForma = {};
+    fechamentos.forEach(f=>{ porForma[f.formaPagamento] = (porForma[f.formaPagamento]||0) + f.total; });
+    const porDispositivo = {};
+    fechamentos.forEach(f=>{ porDispositivo[f.dispositivo] = (porDispositivo[f.dispositivo]||0) + f.total; });
+
+    el.innerHTML = `
+      <div class="totais-mini" style="background:var(--paper);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:10px;">
+        <div class="linha total"><span>Total do dia</span><span>${fmt(total)}</span></div>
+        <div class="linha"><span>Mesas fechadas</span><span>${fechamentos.length}</span></div>
+      </div>
+      <p style="font-size:12px;font-weight:700;margin:10px 0 4px 0;">Por forma de pagamento</p>
+      ${Object.keys(porForma).map(k=>`<div class="linha" style="padding:2px 0;"><span>${k}</span><span>${fmt(porForma[k])}</span></div>`).join('') || '<p style="font-size:12px;color:var(--ink-soft);">Sem fechamentos.</p>'}
+      <p style="font-size:12px;font-weight:700;margin:10px 0 4px 0;">Por dispositivo</p>
+      ${Object.keys(porDispositivo).map(k=>`<div class="linha" style="padding:2px 0;font-size:12.5px;"><span>${k}</span><span>${fmt(porDispositivo[k])}</span></div>`).join('') || ''}
+    `;
+  }
+})();
+</script>
+</body>
+</html>
